@@ -1,0 +1,36 @@
+{
+  "name": "flexi-validate",
+  "main": [
+    "index.js",
+    "lib.js",
+    "build/flexiValidate.browser.js",
+    "build/flexiValidate.browser.min.js"
+  ],
+  "version": "1.0.0",
+  "homepage": "https://github.com/cnatis/flexi-validate",
+  "authors": [
+    "Christian Natis"
+  ],
+  "description": "Flexible JavaScript object validator",
+  "moduleType": [
+    "es6",
+    "globals"
+  ],
+  "keywords": [
+    "validator",
+    "validation",
+    "flexible",
+    "validate",
+    "flexi-validate",
+    "flexi"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "spec"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "name": "flexi-validate",
+  "version": "1.0.0",
+  "description": "Flexible JavaScript object validator",
+  "license": "MIT",
+  "author": {
+    "name": "Christian Natis",
+    "email": "",
+    "url": "https://github.com/cnatis"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cnatis/flexi-validate"
+  },
+  "scripts": {
+    "test": "jasmine-node ./spec",
+    "build": "npm run clean-build-folder; npm run build-prod && npm run build-dev",
+    "build-prod": "npm run build-browser-min && npm run build-node-min",
+    "build-dev": "npm run build-browser && npm run build-node",
+    "clean-build-folder": "rm -rf ./build",
+    "build-browser": "webpack --target=web --output-library-target=var --output-filename=flexiValidate.browser.js",
+    "build-node": "webpack --target=node --output-library-target=umd --output-filename=flexiValidate.node.js",
+    "build-browser-min": "webpack -p --target=web --output-library-target=var --output-filename=flexiValidate.browser.min.js",
+    "build-node-min": "webpack -p --target=node --output-library-target=umd --output-filename=flexiValidate.node.min.js"
+  },
+  "main": "index.js",
+  "files": [
+    "build",
+    "index.js",
+    "lib.js"
+  ],
+  "keywords": [
+    "validator",
+    "validation",
+    "flexible",
+    "validate",
+    "flexi-validate",
+    "flexi"
+  ],
+  "devDependencies": {
+    "babel-core": "^6.4.0",
+    "babel-loader": "^6.2.1",
+    "babel-preset-es2015": "^6.3.13",
+    "jasmine-node": "^1.14.5",
+    "webpack": "^1.12.10"
+  }
+}
