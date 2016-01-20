@@ -1,2 +1,2 @@
-var validation = require('./build/validation.node.min');
+var validation = require('./build/flexiValidate.node.min');
 module.exports = validation;
