@@ -123,7 +123,11 @@ export function isValid(targetObj, validationObj) {
 // Returns a promise resolving to true if all validations are valid
 // and resolving to false if a validation failed
 export function isValidAsync(targetObj, validationObj) {
-    validateParams(targetObj, validationObj);
+    try {
+        validateParams(targetObj, validationObj);
+    } catch(err) {
+        return Promise.reject(err);
+    }
     
     let validationKeys = Object.keys(validationObj);
     let result;
@@ -173,8 +177,12 @@ export function messages(targetObj, validationObj, validationInput) {
 // Returns a promise resolving to an array of validation messages 
 // for each validation prop that fails for a single validation input
 export function messagesAsync(targetObj, validationObj, validationInput) {
-    validateParams(targetObj, validationObj);
-    validateInputKey(validationObj, validationInput);
+    try {
+        validateParams(targetObj, validationObj);
+        validateInputKey(validationObj, validationInput);
+    } catch(err) {
+        return Promise.reject(err);
+    }
     
     let keys = Object.keys(validationObj[validationInput]);
 
@@ -224,7 +232,11 @@ export function allMessages(targetObj, validationObj) {
 // each validation input, with each key on that object being the failed 
 // validation prop, and the value is the validation message
 export function allMessagesAsync(targetObj, validationObj) {
-    validateParams(targetObj, validationObj);
+    try {
+        validateParams(targetObj, validationObj);
+    } catch(err) {
+        return Promise.reject(err);
+    }
     
     let keys = Object.keys(validationObj);
 
@@ -276,6 +288,9 @@ export function cleanAttributes(targetObj, validationObj) {
         let isNestedKey = (key.indexOf('.') > -1);
         if(!isNestedKey) {
             result[key] = targetObj[key];
+        } else {
+            let rootKey = key.split('.')[0];
+            result[rootKey] = targetObj[rootKey];
         }
     });
     return result;

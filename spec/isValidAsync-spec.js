@@ -2,27 +2,21 @@ var validation = require('../build/flexiValidate.node');
 
 describe('flexiValidate.isValidAsync', function () {
     // Parameter validation
-    it('should throw an error if not given an object as the target object', function() {
+    it('should reject with an error if not given an object as the target object', function() {
         var constraints = {};
         var objectToTest = undefined;
-        var result;
-        try {
-            validation.isValidAsync(objectToTest, constraints);
-        } catch(err) {
-            result = err;
-        }
-        expect(result).toBeDefined();
+        validation.isValidAsync(objectToTest, constraints)
+            .catch(function(err) {
+                expect(err).toBeDefined();            
+            });
     });
     it('should throw an error if not given an object as the validation object', function() {
         var constraints = undefined;
         var objectToTest = {};
-        var result;
-        try {
-            validation.isValidAsync(objectToTest, constraints);
-        } catch(err) {
-            result = err;
-        }
-        expect(result).toBeDefined();
+        validation.isValidAsync(objectToTest, constraints)
+            .catch(function(err) {
+                expect(err).toBeDefined();            
+            });
     });
     // Return validation
     it('should return a promise with a then property', function () {

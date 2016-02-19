@@ -199,7 +199,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	// Returns a promise resolving to true if all validations are valid
 	// and resolving to false if a validation failed
 	function isValidAsync(targetObj, validationObj) {
-	    validateParams(targetObj, validationObj);
+	    try {
+	        validateParams(targetObj, validationObj);
+	    } catch (err) {
+	        return Promise.reject(err);
+	    }
 
 	    var validationKeys = Object.keys(validationObj);
 	    var result = undefined;
@@ -249,8 +253,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	// Returns a promise resolving to an array of validation messages
 	// for each validation prop that fails for a single validation input
 	function messagesAsync(targetObj, validationObj, validationInput) {
-	    validateParams(targetObj, validationObj);
-	    validateInputKey(validationObj, validationInput);
+	    try {
+	        validateParams(targetObj, validationObj);
+	        validateInputKey(validationObj, validationInput);
+	    } catch (err) {
+	        return Promise.reject(err);
+	    }
 
 	    var keys = Object.keys(validationObj[validationInput]);
 
@@ -298,7 +306,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	// each validation input, with each key on that object being the failed
 	// validation prop, and the value is the validation message
 	function allMessagesAsync(targetObj, validationObj) {
-	    validateParams(targetObj, validationObj);
+	    try {
+	        validateParams(targetObj, validationObj);
+	    } catch (err) {
+	        return Promise.reject(err);
+	    }
 
 	    var keys = Object.keys(validationObj);
 
@@ -348,6 +360,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var isNestedKey = key.indexOf('.') > -1;
 	        if (!isNestedKey) {
 	            result[key] = targetObj[key];
+	        } else {
+	            var rootKey = key.split('.')[0];
+	            result[rootKey] = targetObj[rootKey];
 	        }
 	    });
 	    return result;
