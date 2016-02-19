@@ -44,6 +44,12 @@ function functionalAnd(result, current) {
         return result;
     }
 }
+// Reduces an array of objects with a key and message
+// property into a single object
+function reduceToObject(result, current) {
+    result[current.key] = current.message;
+    return result;
+}
 // Reduces an array of keys to the resulting object
 // ie. result[nestedKey[0]][nestedKey[1]][nestedKey[n]] ...
 // Initial value should be the target object
@@ -171,8 +177,15 @@ export function messages(targetObj, validationObj, validationInput) {
         let validationProp = validationObj[validationInput][key];
         let resultObj = resolveNestedObject(targetObj, validationInput);
         let message = (validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message);
-        if(!validationProp.isValid(resultObj)) return message;
-    }).filter(isNotUndefined);
+        if(!validationProp.isValid(resultObj)) {
+            return {
+                key: key,
+                message: message
+            };
+        }
+    })
+    .filter(isNotUndefined)
+    .reduce(reduceToObject, {});
 }
 // Returns a promise resolving to an array of validation messages 
 // for each validation prop that fails for a single validation input
@@ -191,14 +204,21 @@ export function messagesAsync(targetObj, validationObj, validationInput) {
         let resultObj = resolveNestedObject(targetObj, validationInput);
         let message = (validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message);
         return Promise.resolve(validationProp.isValid(resultObj))
-            .then(function(isValid) {
-                if(!isValid) return message;
-            });
+            .then(function(validationPropKey, isValid) {
+                if(!isValid) {
+                    return {
+                        key: validationPropKey,
+                        message: message
+                    };
+                }
+            }.bind(null, key));
     });
     
     return Promise.all(validationPromises)
         .then(function(message) {
-            return message.filter(isNotUndefined); 
+            return message
+                .filter(isNotUndefined)
+                .reduce(reduceToObject, {});
         });
 }
 // Returns an array of objects, one object for each validation
@@ -223,7 +243,9 @@ export function allMessages(targetObj, validationObj) {
             }
         });
 
-        result[key] = validationResult;
+        if(Object.keys(validationResult).length > 0) {
+            result[key] = validationResult;
+        }
 
         return result;
     }, {});

@@ -38,7 +38,9 @@ describe('flexiValidate.messagesAsync', function() {
             }));
         promises.push(validation.messagesAsync(objectToTest, constraints, 'testProperty')
             .then(function(message) {
-                expect(message).toEqual([constraints.testProperty.isRequired.message]);        
+                expect(message).toEqual({
+                    isRequired: constraints.testProperty.isRequired.message
+                });
             }));
         
         Promise.all(promises)
@@ -72,11 +74,11 @@ describe('flexiValidate.messagesAsync', function() {
             }));
         promises.push(validation.messagesAsync(objectToTest, constraints, 'testProperty')
             .then(function(message) {
-                expect(message).toEqual([
-                    constraints.testProperty.isRequired.message,
-                    constraints.testProperty.isRequired2.message
-                ]);
-                expect(message.length).toBe(2);
+                expect(message).toEqual({
+                    isRequired: constraints.testProperty.isRequired.message,
+                    isRequired2: constraints.testProperty.isRequired2.message
+                });
+                expect(Object.keys(message).length).toBe(2);
             }));
         
         Promise.all(promises)
@@ -111,11 +113,11 @@ describe('flexiValidate.messagesAsync', function() {
             }));
         promises.push(validation.messagesAsync(objectToTest, constraints, 'testProperty')
             .then(function(message) {
-                expect(message).toEqual([
-                    constraints.testProperty.isRequired.message,
-                    constraints.testProperty.isRequired2.message()
-                ]);
-                expect(message.length).toBe(2);
+                expect(message).toEqual({
+                    isRequired: constraints.testProperty.isRequired.message,
+                    isRequired2: constraints.testProperty.isRequired2.message()
+                });
+                expect(Object.keys(message).length).toBe(2);
             }));
         
         Promise.all(promises)

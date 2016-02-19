@@ -40,7 +40,9 @@ describe('flexiValidate.messages', function() {
         var isValid = validation.isValid(objectToTest, constraints);
         var message = validation.messages(objectToTest, constraints, 'testProperty');
         expect(isValid).toBe(false);
-        expect(message).toEqual([constraints.testProperty.isRequired.message]);
+        expect(message).toEqual({
+            isRequired: constraints.testProperty.isRequired.message
+        });
     });
     it('should produce a message for each failed constraint', function () {
         var constraints = {
@@ -63,11 +65,11 @@ describe('flexiValidate.messages', function() {
         var isValid = validation.isValid(objectToTest, constraints);
         var message = validation.messages(objectToTest, constraints, 'testProperty');
         expect(isValid).toBe(false);
-        expect(message).toEqual([
-            constraints.testProperty.isRequired.message,
-            constraints.testProperty.isRequired2.message
-        ]);
-        expect(message.length).toBe(2);
+        expect(message).toEqual({
+            isRequired: constraints.testProperty.isRequired.message,
+            isRequired2: constraints.testProperty.isRequired2.message
+        });
+        expect(Object.keys(message).length).toBe(2);
     });
     it('should allow a function or string for message', function () {
         var constraints = {
@@ -92,10 +94,10 @@ describe('flexiValidate.messages', function() {
         var isValid = validation.isValid(objectToTest, constraints);
         var message = validation.messages(objectToTest, constraints, 'testProperty');
         expect(isValid).toBe(false);
-        expect(message).toEqual([
-            constraints.testProperty.isRequired.message,
-            constraints.testProperty.isRequired2.message()
-        ]);
-        expect(message.length).toBe(2);
+        expect(message).toEqual({
+            isRequired: constraints.testProperty.isRequired.message,
+            isRequired2: constraints.testProperty.isRequired2.message()
+        });
+        expect(Object.keys(message).length).toBe(2);
     });    
 });

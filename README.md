@@ -90,11 +90,9 @@ Each property on the validation object corresponds to a property on the object t
 	
 	flexiValidate.messages(objectToValidate, validationObj, 'username');
 	// returns the following object
-	[
-    	{
-    	    required: 'Username is required'
-    	}
-    ]
+	{
+	    required: 'Username is required'
+	}
 ```
 
 ### Asynchronous Validation of an Object
@@ -143,11 +141,9 @@ Each property on the validation object corresponds to a property on the object t
 	flexiValidate.messagesAsync(objectToValidate, validationObj, 'username')
 		.then(function(message) {
         	// returns the following object
-        	[
-	        	{
-	        	    required: 'Username is required'
-	        	}
-	        ]
+        	{
+        	    required: 'Username is required'
+        	}
 	    });
 ```
 
@@ -329,11 +325,9 @@ Note this function does not check the validity of the object
 	
 	flexiValidate.messages(objectToValidate, validationObj, 'pet.name');
 	// returns the following object
-	[
-    	{
-    	    required: 'Pet name is required'
-    	}
-    ]
+	{
+	    required: 'Pet name is required'
+	}
 ```
 
 ### Validate Complex Objects
@@ -403,21 +397,25 @@ Note this function does not check the validity of the object
 	// returns the following data structure
 	{
 	    pets: {
-        	required: [
-        		name: {
-        			required: 'Pet name is required'
-        		}
-        	]
-        }
+	    	required: [
+	    	    {
+	        		name: {
+	        			required: 'Pet name is required'
+	        		}
+	        	}
+	    	]
+	    }
 	}
 	
 	flexiValidate.messages(objectToValidate, validationObj, 'pets');
 	// returns the following object
-	[
-    	[
-    		name: {
-	    	    required:  'Pet name is required'
-		    }
+	{
+    	required: [
+        	{
+        		name: {
+            	    required:  'Pet name is required'
+        	    }
+        	}
     	]
-    ]
+    }
 ```
