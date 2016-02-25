@@ -67,6 +67,43 @@ describe('flexiValidate.isValidAsync', function () {
                 done();
             }, done);
     });
+    it('should validate an array of objects based on constraints', function (done) {
+        var constraints = {
+            testProperty: {
+                isRequired: {
+                    isValid: function(prop) {
+                        return (typeof(prop) !== 'undefined');
+                    },
+                    message: 'testProperty is required'
+                }
+            }
+        };
+        var objectToTest = [{}];
+        var promises = [];
+        promises.push(validation.isValidAsync(objectToTest, constraints)
+            .then(function(result) {
+                expect(result instanceof Array).toBe(true);
+                expect(result.length).toBe(1);
+                expect(result[0]).toBe(false);
+                return result;
+            }));
+        
+        var objectToTest2 = [{
+            testProperty: 'test'
+        }];
+        promises.push(validation.isValidAsync(objectToTest2, constraints)
+            .then(function(result) {
+                expect(result instanceof Array).toBe(true);
+                expect(result.length).toBe(1);
+                expect(result[0]).toBe(true);
+                return result;
+            }));
+        
+        Promise.all(promises)
+            .then(function() {
+                done();
+            }, done);
+    });
     it('should allow validation props without constraints', function (done) {
         var constraints = {
             testProperty: {

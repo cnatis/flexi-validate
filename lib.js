@@ -104,27 +104,35 @@ export function isValid(targetObj, validationObj) {
     validateParams(targetObj, validationObj);
         
     let validationKeys = Object.keys(validationObj);
-    return validationKeys.reduce(function(result, validationKey) {
-        if(result) {
-            let validationInputObj = validationObj[validationKey];
-            let validationInputKeys = Object.keys(validationInputObj);
-            return validationInputKeys.reduce(function(result, inputKey) {
-                if(result) {
-                    let valdationProp = validationInputObj[inputKey];
-                    let resultObj = resolveNestedObject(targetObj, validationKey);
-                    if(valdationProp.isValid instanceof Function) {
-                        return valdationProp.isValid(resultObj);
+    let toReturn = false;
+    if(targetObj instanceof Array) {
+        toReturn = targetObj.map(function(object) {
+            return isValid(object, validationObj);
+        });
+    } else {
+        toReturn = validationKeys.reduce(function(result, validationKey) {
+            if(result) {
+                let validationInputObj = validationObj[validationKey];
+                let validationInputKeys = Object.keys(validationInputObj);
+                return validationInputKeys.reduce(function(result, inputKey) {
+                    if(result) {
+                        let valdationProp = validationInputObj[inputKey];
+                        let resultObj = resolveNestedObject(targetObj, validationKey);
+                        if(valdationProp.isValid instanceof Function) {
+                            return valdationProp.isValid(resultObj);
+                        } else {
+                            return true;
+                        }
                     } else {
-                        return true;
+                        return result;
                     }
-                } else {
-                    return result;
-                }
-            }, true);
-        } else {
-            return result;
-        }
-    }, true);
+                }, true);
+            } else {
+                return result;
+            }
+        }, true);
+    }
+    return toReturn;
 }
 // Returns a promise resolving to true if all validations are valid
 // and resolving to false if a validation failed
@@ -136,34 +144,41 @@ export function isValidAsync(targetObj, validationObj) {
     }
     
     let validationKeys = Object.keys(validationObj);
-    let result;
-    if(validationKeys.length > 0) {
-        let validationPromises = validationKeys.map(function(validationKey) {
-            let validationInputObj = validationObj[validationKey];
-            let validationInputKeys = Object.keys(validationInputObj);
-            let validationInputPromises = validationInputKeys.map(function(inputKey) {
-                let valdationProp = validationInputObj[inputKey];
-                let resultObj = resolveNestedObject(targetObj, validationKey);
-                if(valdationProp.isValid instanceof Function) {
-                    return Promise.resolve(valdationProp.isValid(resultObj));
-                } else {
-                    return Promise.resolve(true);
-                }
-            });
-            
-            return Promise.all(validationInputPromises).then(function(validationInputResults) {
-                return validationInputResults.reduce(functionalAnd);
-            });
-        }, true);
-        
-        result = Promise.all(validationPromises).then(function(validationResults) {
-            return validationResults.reduce(functionalAnd);
-        });
+    let toReturn;
+    if(targetObj instanceof Array) {
+        toReturn = Promise.all(targetObj.map(function(object) {
+            return isValidAsync(object, validationObj);
+        }));
     } else {
-        // If there are no constraints every object is valid
-        result = Promise.resolve(true);
+        if(validationKeys.length > 0) {
+            let validationPromises = validationKeys.map(function(validationKey) {
+                let validationInputObj = validationObj[validationKey];
+                let validationInputKeys = Object.keys(validationInputObj);
+                let validationInputPromises = validationInputKeys.map(function(inputKey) {
+                    let valdationProp = validationInputObj[inputKey];
+                    let resultObj = resolveNestedObject(targetObj, validationKey);
+                    if(valdationProp.isValid instanceof Function) {
+                        return Promise.resolve(valdationProp.isValid(resultObj));
+                    } else {
+                        return Promise.resolve(true);
+                    }
+                });
+                
+                return Promise.all(validationInputPromises).then(function(validationInputResults) {
+                    return validationInputResults.reduce(functionalAnd);
+                });
+            }, true);
+            
+            toReturn = Promise.all(validationPromises).then(function(validationResults) {
+                return validationResults.reduce(functionalAnd);
+            });
+        } else {
+            // If there are no constraints every object is valid
+            toReturn = Promise.resolve(true);
+        }
     }
-    return result;
+    
+    return toReturn;
 }
 // Returns an array of validation messages for each validation prop
 // that fails for a single validation input
@@ -172,20 +187,29 @@ export function messages(targetObj, validationObj, validationInput) {
     validateInputKey(validationObj, validationInput);
     
     let keys = Object.keys(validationObj[validationInput]);
+    let toReturn;
+    
+    if(targetObj instanceof Array) {
+        toReturn = targetObj.map(function(object) {
+            return messages(object, validationObj, validationInput);
+        });
+    } else {
+        toReturn = keys.map(function(key) {
+            let validationProp = validationObj[validationInput][key];
+            let resultObj = resolveNestedObject(targetObj, validationInput);
+            let message = (validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message);
+            if(!validationProp.isValid(resultObj)) {
+                return {
+                    key: key,
+                    message: message
+                };
+            }
+        })
+        .filter(isNotUndefined)
+        .reduce(reduceToObject, {});
+    }
 
-    return keys.map(function(key) {
-        let validationProp = validationObj[validationInput][key];
-        let resultObj = resolveNestedObject(targetObj, validationInput);
-        let message = (validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message);
-        if(!validationProp.isValid(resultObj)) {
-            return {
-                key: key,
-                message: message
-            };
-        }
-    })
-    .filter(isNotUndefined)
-    .reduce(reduceToObject, {});
+    return toReturn;
 }
 // Returns a promise resolving to an array of validation messages 
 // for each validation prop that fails for a single validation input
@@ -198,28 +222,36 @@ export function messagesAsync(targetObj, validationObj, validationInput) {
     }
     
     let keys = Object.keys(validationObj[validationInput]);
-
-    let validationPromises = keys.map(function(key) {
-        let validationProp = validationObj[validationInput][key];
-        let resultObj = resolveNestedObject(targetObj, validationInput);
-        let message = (validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message);
-        return Promise.resolve(validationProp.isValid(resultObj))
-            .then(function(validationPropKey, isValid) {
-                if(!isValid) {
-                    return {
-                        key: validationPropKey,
-                        message: message
-                    };
-                }
-            }.bind(null, key));
-    });
+    let toReturn;
     
-    return Promise.all(validationPromises)
-        .then(function(message) {
-            return message
-                .filter(isNotUndefined)
-                .reduce(reduceToObject, {});
+    if(targetObj instanceof Array) {
+        toReturn = Promise.all(targetObj.map(function(object) {
+            return messagesAsync(object, validationObj, validationInput);
+        }));
+    } else {
+        let validationPromises = keys.map(function(key) {
+            let validationProp = validationObj[validationInput][key];
+            let resultObj = resolveNestedObject(targetObj, validationInput);
+            let message = (validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message);
+            return Promise.resolve(validationProp.isValid(resultObj))
+                .then(function(validationPropKey, isValid) {
+                    if(!isValid) {
+                        return {
+                            key: validationPropKey,
+                            message: message
+                        };
+                    }
+                }.bind(null, key));
         });
+        
+        toReturn = Promise.all(validationPromises)
+            .then(function(message) {
+                return message
+                    .filter(isNotUndefined)
+                    .reduce(reduceToObject, {});
+            });
+    }
+    return toReturn;
 }
 // Returns an array of objects, one object for each validation
 // input, with each key on that object being the failed validation
@@ -228,27 +260,35 @@ export function allMessages(targetObj, validationObj) {
     validateParams(targetObj, validationObj);
     
     let keys = Object.keys(validationObj);
+    let toReturn;
 
-    return keys.reduce(function(result, key) {
-        let validationInputObj = validationObj[key];
-        let validationInputKeys = Object.keys(validationInputObj);
-        let validationResult = {};
-
-        validationInputKeys.forEach(function(inputKey) {
-            let validationProp = validationInputObj[inputKey];
-            let resultObj = resolveNestedObject(targetObj, key);
-            let message = (validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message);
-            if(!validationProp.isValid(resultObj)) {
-                validationResult[inputKey] = message;
-            }
+    if(targetObj instanceof Array) {
+        toReturn = targetObj.map(function(object) {
+            return allMessages(object, validationObj); 
         });
-
-        if(Object.keys(validationResult).length > 0) {
-            result[key] = validationResult;
-        }
-
-        return result;
-    }, {});
+    } else {
+        toReturn = keys.reduce(function(result, key) {
+            let validationInputObj = validationObj[key];
+            let validationInputKeys = Object.keys(validationInputObj);
+            let validationResult = {};
+    
+            validationInputKeys.forEach(function(inputKey) {
+                let validationProp = validationInputObj[inputKey];
+                let resultObj = resolveNestedObject(targetObj, key);
+                let message = (validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message);
+                if(!validationProp.isValid(resultObj)) {
+                    validationResult[inputKey] = message;
+                }
+            });
+    
+            if(Object.keys(validationResult).length > 0) {
+                result[key] = validationResult;
+            }
+    
+            return result;
+        }, {});
+    }
+    return toReturn
 }
 // Returns a promise resolving to an array of objects, one object for 
 // each validation input, with each key on that object being the failed 
@@ -261,43 +301,51 @@ export function allMessagesAsync(targetObj, validationObj) {
     }
     
     let keys = Object.keys(validationObj);
-
-    let validationPromises = keys.map(function(key) {
-        let validationInputObj = validationObj[key];
-        let validationInputKeys = Object.keys(validationInputObj);
-        let validationInputPromises = validationInputKeys.map(function(inputKey) {
-            let validationProp = validationInputObj[inputKey];
-            let resultObj = resolveNestedObject(targetObj, key);
-            let message = (validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message);
-            return Promise.resolve(validationProp.isValid(resultObj))
-                .then(function(isValid) {
-                   if(!isValid) {
-                       return {
-                           message: message,
-                           key: inputKey
-                       };
-                   }
-                });
+    let toReturn;
+    
+    if(targetObj instanceof Array) {
+        toReturn = Promise.all(targetObj.map(function(object) {
+            return allMessagesAsync(object, validationObj);
+        }));
+    } else {
+        let validationPromises = keys.map(function(key) {
+            let validationInputObj = validationObj[key];
+            let validationInputKeys = Object.keys(validationInputObj);
+            let validationInputPromises = validationInputKeys.map(function(inputKey) {
+                let validationProp = validationInputObj[inputKey];
+                let resultObj = resolveNestedObject(targetObj, key);
+                let message = (validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message);
+                return Promise.resolve(validationProp.isValid(resultObj))
+                    .then(function(isValid) {
+                       if(!isValid) {
+                           return {
+                               message: message,
+                               key: inputKey
+                           };
+                       }
+                    });
+            });
+            
+            return Promise.all(validationInputPromises).then(function(validationInputResults) {
+                let resultObj = validationInputResults.reduce(function(result, current) {
+                    result[current.key] = current.message;
+                    return result;
+                }, {});
+                resultObj.inputKey = key;
+                return resultObj; 
+            });
         });
         
-        return Promise.all(validationInputPromises).then(function(validationInputResults) {
-            let resultObj = validationInputResults.reduce(function(result, current) {
-                result[current.key] = current.message;
-                return result;
-            }, {});
-            resultObj.inputKey = key;
-            return resultObj; 
-        });
-    });
-    
-    return Promise.all(validationPromises)
-        .then(function(allMessages) {
-            return allMessages.reduce(function(result, current) {
-                result[current.inputKey] = current;
-                delete current.inputKey;
-                return result;
-            }, {});
-        });
+        toReturn = Promise.all(validationPromises)
+            .then(function(allMessages) {
+                return allMessages.reduce(function(result, current) {
+                    result[current.inputKey] = current;
+                    delete current.inputKey;
+                    return result;
+                }, {});
+            });
+    }
+    return toReturn;
 }
 // Returns an object that contains all the attributes of
 // the target object that are being validated
@@ -305,17 +353,25 @@ export function cleanAttributes(targetObj, validationObj) {
     validateParams(targetObj, validationObj);
     
     let keys = Object.keys(validationObj);
-    let result = {};
-    keys.forEach(function(key) {
-        let isNestedKey = (key.indexOf('.') > -1);
-        if(!isNestedKey) {
-            result[key] = targetObj[key];
-        } else {
-            let rootKey = key.split('.')[0];
-            result[rootKey] = targetObj[rootKey];
-        }
-    });
-    return result;
+    let toReturn;
+    
+    if(targetObj instanceof Array) {
+        toReturn = targetObj.map(function(object) {
+            return cleanAttributes(object, validationObj); 
+        });
+    } else {
+        toReturn = {};
+        keys.forEach(function(key) {
+            let isNestedKey = (key.indexOf('.') > -1);
+            if(!isNestedKey) {
+                toReturn[key] = targetObj[key];
+            } else {
+                let rootKey = key.split('.')[0];
+                toReturn[rootKey] = targetObj[rootKey];
+            }
+        });
+    }
+    return toReturn;
 }
 // Default export object with all functions as properties
 export default {

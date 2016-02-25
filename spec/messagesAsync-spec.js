@@ -86,6 +86,45 @@ describe('flexiValidate.messagesAsync', function() {
                 done();
             }, done);
     });
+    it('should validate an array of objects and produce a message for each failed constraint', function (done) {
+        var constraints = {
+            testProperty: {
+                isRequired: {
+                    isValid: function(prop) {
+                        return (typeof(prop) !== 'undefined');
+                    },
+                    message: 'testProperty is required'
+                },
+                isRequired2: {
+                    isValid: function(prop) {
+                        return (typeof(prop) !== 'undefined');
+                    },
+                    message: 'testProperty is required2'
+                }
+            }
+        };
+        var objectToTest = [{}];
+        var promises = [];
+        promises.push(validation.isValidAsync(objectToTest, constraints)
+            .then(function(result) {
+                expect(result instanceof Array).toBe(true);
+                expect(result[0]).toBe(false);
+            }));
+        promises.push(validation.messagesAsync(objectToTest, constraints, 'testProperty')
+            .then(function(message) {
+                expect(message instanceof Array).toBe(true);
+                expect(message[0]).toEqual({
+                    isRequired: constraints.testProperty.isRequired.message,
+                    isRequired2: constraints.testProperty.isRequired2.message
+                });
+                expect(Object.keys(message[0]).length).toBe(2);
+            }));
+        
+        Promise.all(promises)
+            .then(function() {
+                done();
+            }, done);
+    });
     it('should allow a function or string for message', function (done) {
         var constraints = {
             testProperty: {

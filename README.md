@@ -151,46 +151,46 @@ Each property on the validation object corresponds to a property on the object t
 
 ### isValid
 
-Returns true if all the validations for the target object return true
-First parameter is the target object we want to validate
+Returns true if all the validations for the target object return true or an array of isValid values if the first parameter is an array
+First parameter is the target object or array of objects we want to validate
 Second parameter is the validation object containing our validation structure
 ```
-    Boolean isValid(targetObj, validationObj)
+    Boolean || Array isValid(targetObj, validationObj)
 ```
 
 ### isValidAsync
 
-Returns a promise resolving to true if all the validations for the target object return true
-First parameter is the target object we want to validate
+Returns a promise resolving to true if all the validations for the target object return true or an array of promises resolving to isValid values if the first parameter is an array
+First parameter is the target object or array of objects we want to validate
 Second parameter is the validation object containing our validation structure
 ```
-    Promise isValidAsync(targetObj, validationObj)
+    Promise || Array isValidAsync(targetObj, validationObj)
 ```
 
 ### messages
 
-Returns an object where each property is a failed validation and the value of that property is the validation message
-First parameter is the target object we want to validate
+Returns an object where each property is a failed validation and the value of that property is the validation message or an array of objects where each object is the result of messages if the first parameter is an array
+First parameter is the target object or array of objects we want to validate
 Second parameter is the validation object containing our validation structure
 Third parameter is the key for the validation input we want to get messages for, should be a string
 ```
-    Object messages(targetObj, validationObj, validationInput)
+    Object || Array messages(targetObj, validationObj, validationInput)
 ```
 
 ### messagesAsync
 
-Returns a promise resolving to an object where each property is a failed validation and the value of that property is the validation message
-First parameter is the target object we want to validate
+Returns a promise resolving to an object where each property is a failed validation and the value of that property is the validation message or an array of promises resolving to the result of messagesAsync if the first parameter is an array
+First parameter is the target object or array of objects we want to validate
 Second parameter is the validation object containing our validation structure
 Third parameter is the key for the validation input we want to get messages for, should be a string
 ```
-    Promise messagesAsync(targetObj, validationObj, validationInput)
+    Promise || Array messagesAsync(targetObj, validationObj, validationInput)
 ```
 
 ### allMessages
 
-Returns an array of objects where each object is a failed validation input and each property on the object is a failed validation prop and the value of that property is the validation message
-First parameter is the target object we want to validate
+Returns an object where each key is a failed validation input object and each property on the object is a failed validation prop and the value of that property is the validation message or an array containing the result of allMessages if the first parameter is an array
+First parameter is the target object or array of objects we want to validate
 Second parameter is the validation object containing our validation structure
 ```
     Array allMessages(targetObj, validationObj)
@@ -198,22 +198,22 @@ Second parameter is the validation object containing our validation structure
 
 ### allMessagesAsync
 
-Returns a promise resolving to an array of objects where each object is a failed validation input and each property on the object is a failed validation prop and the value of that property is the validation message
-First parameter is the target object we want to validate
+Returns a promise resolving toan object where each key is a failed validation input object and each property on the object is a failed validation prop and the value of that property is the validation message or an array of promises resolving to the result of allMessagesAsync if the first parameter is an array
+First parameter is the target object or array of objects we want to validate
 Second parameter is the validation object containing our validation structure
 ```
-    Promise allMessagesAsync(targetObj, validationObj)
+    Promise || Array allMessagesAsync(targetObj, validationObj)
 ```
 
 ### cleanAttributes
 
 Filters the properties on the provided object to only those that were validated
-Returns the filtered object
+Returns the filtered object or an array of filtered objects if the first parameter is an array
 
 Note this function does not check the validity of the object
 
 ```
-    Object cleanAttributes(targetObj, validationObj)
+    Object || Array cleanAttributes(targetObj, validationObj)
 ```
 
 #### Example #1
@@ -271,6 +271,47 @@ Note this function does not check the validity of the object
 	    username: 'test',
 	    somethingElse: true
 	}
+```
+
+#### Example #3
+
+```
+    var validationObj = {
+		username: {
+			required: {
+				isValid: function(username) {
+					return true;
+				},
+				message: 'Username is required'
+			}
+		},
+		somethingElse: {}
+	};
+	
+	var objectToValidate = {
+	    username: 'test',
+	    somethingElse: true
+	};
+	
+	var arrayToValidate = [
+	    objectToValidate,
+	    objectToValidate
+	];
+	
+	flexiValidate.cleanAttributes(arrayToValidate, validationObj); 
+	// returns the following array of objects
+	// somthingElse is not filtered because we are validating it even without
+	// a validation prop on the validation input
+	[
+		{
+		    username: 'test',
+		    somethingElse: true
+		},
+		{
+		    username: 'test',
+		    somethingElse: true
+		}
+	]
 ```
 
 ## More Code Exmaples

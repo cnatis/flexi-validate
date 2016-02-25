@@ -165,33 +165,41 @@ var flexiValidate =
 	    validateParams(targetObj, validationObj);
 
 	    var validationKeys = Object.keys(validationObj);
-	    return validationKeys.reduce(function (result, validationKey) {
-	        if (result) {
-	            var _ret = function () {
-	                var validationInputObj = validationObj[validationKey];
-	                var validationInputKeys = Object.keys(validationInputObj);
-	                return {
-	                    v: validationInputKeys.reduce(function (result, inputKey) {
-	                        if (result) {
-	                            var valdationProp = validationInputObj[inputKey];
-	                            var resultObj = resolveNestedObject(targetObj, validationKey);
-	                            if (valdationProp.isValid instanceof Function) {
-	                                return valdationProp.isValid(resultObj);
+	    var toReturn = false;
+	    if (targetObj instanceof Array) {
+	        toReturn = targetObj.map(function (object) {
+	            return isValid(object, validationObj);
+	        });
+	    } else {
+	        toReturn = validationKeys.reduce(function (result, validationKey) {
+	            if (result) {
+	                var _ret = function () {
+	                    var validationInputObj = validationObj[validationKey];
+	                    var validationInputKeys = Object.keys(validationInputObj);
+	                    return {
+	                        v: validationInputKeys.reduce(function (result, inputKey) {
+	                            if (result) {
+	                                var valdationProp = validationInputObj[inputKey];
+	                                var resultObj = resolveNestedObject(targetObj, validationKey);
+	                                if (valdationProp.isValid instanceof Function) {
+	                                    return valdationProp.isValid(resultObj);
+	                                } else {
+	                                    return true;
+	                                }
 	                            } else {
-	                                return true;
+	                                return result;
 	                            }
-	                        } else {
-	                            return result;
-	                        }
-	                    }, true)
-	                };
-	            }();
+	                        }, true)
+	                    };
+	                }();
 
-	            if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
-	        } else {
-	            return result;
-	        }
-	    }, true);
+	                if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+	            } else {
+	                return result;
+	            }
+	        }, true);
+	    }
+	    return toReturn;
 	}
 	// Returns a promise resolving to true if all validations are valid
 	// and resolving to false if a validation failed
@@ -203,34 +211,41 @@ var flexiValidate =
 	    }
 
 	    var validationKeys = Object.keys(validationObj);
-	    var result = undefined;
-	    if (validationKeys.length > 0) {
-	        var validationPromises = validationKeys.map(function (validationKey) {
-	            var validationInputObj = validationObj[validationKey];
-	            var validationInputKeys = Object.keys(validationInputObj);
-	            var validationInputPromises = validationInputKeys.map(function (inputKey) {
-	                var valdationProp = validationInputObj[inputKey];
-	                var resultObj = resolveNestedObject(targetObj, validationKey);
-	                if (valdationProp.isValid instanceof Function) {
-	                    return Promise.resolve(valdationProp.isValid(resultObj));
-	                } else {
-	                    return Promise.resolve(true);
-	                }
-	            });
-
-	            return Promise.all(validationInputPromises).then(function (validationInputResults) {
-	                return validationInputResults.reduce(functionalAnd);
-	            });
-	        }, true);
-
-	        result = Promise.all(validationPromises).then(function (validationResults) {
-	            return validationResults.reduce(functionalAnd);
-	        });
+	    var toReturn = undefined;
+	    if (targetObj instanceof Array) {
+	        toReturn = Promise.all(targetObj.map(function (object) {
+	            return isValidAsync(object, validationObj);
+	        }));
 	    } else {
-	        // If there are no constraints every object is valid
-	        result = Promise.resolve(true);
+	        if (validationKeys.length > 0) {
+	            var validationPromises = validationKeys.map(function (validationKey) {
+	                var validationInputObj = validationObj[validationKey];
+	                var validationInputKeys = Object.keys(validationInputObj);
+	                var validationInputPromises = validationInputKeys.map(function (inputKey) {
+	                    var valdationProp = validationInputObj[inputKey];
+	                    var resultObj = resolveNestedObject(targetObj, validationKey);
+	                    if (valdationProp.isValid instanceof Function) {
+	                        return Promise.resolve(valdationProp.isValid(resultObj));
+	                    } else {
+	                        return Promise.resolve(true);
+	                    }
+	                });
+
+	                return Promise.all(validationInputPromises).then(function (validationInputResults) {
+	                    return validationInputResults.reduce(functionalAnd);
+	                });
+	            }, true);
+
+	            toReturn = Promise.all(validationPromises).then(function (validationResults) {
+	                return validationResults.reduce(functionalAnd);
+	            });
+	        } else {
+	            // If there are no constraints every object is valid
+	            toReturn = Promise.resolve(true);
+	        }
 	    }
-	    return result;
+
+	    return toReturn;
 	}
 	// Returns an array of validation messages for each validation prop
 	// that fails for a single validation input
@@ -239,18 +254,27 @@ var flexiValidate =
 	    validateInputKey(validationObj, validationInput);
 
 	    var keys = Object.keys(validationObj[validationInput]);
+	    var toReturn = undefined;
 
-	    return keys.map(function (key) {
-	        var validationProp = validationObj[validationInput][key];
-	        var resultObj = resolveNestedObject(targetObj, validationInput);
-	        var message = validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message;
-	        if (!validationProp.isValid(resultObj)) {
-	            return {
-	                key: key,
-	                message: message
-	            };
-	        }
-	    }).filter(isNotUndefined).reduce(reduceToObject, {});
+	    if (targetObj instanceof Array) {
+	        toReturn = targetObj.map(function (object) {
+	            return messages(object, validationObj, validationInput);
+	        });
+	    } else {
+	        toReturn = keys.map(function (key) {
+	            var validationProp = validationObj[validationInput][key];
+	            var resultObj = resolveNestedObject(targetObj, validationInput);
+	            var message = validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message;
+	            if (!validationProp.isValid(resultObj)) {
+	                return {
+	                    key: key,
+	                    message: message
+	                };
+	            }
+	        }).filter(isNotUndefined).reduce(reduceToObject, {});
+	    }
+
+	    return toReturn;
 	}
 	// Returns a promise resolving to an array of validation messages
 	// for each validation prop that fails for a single validation input
@@ -263,24 +287,32 @@ var flexiValidate =
 	    }
 
 	    var keys = Object.keys(validationObj[validationInput]);
+	    var toReturn = undefined;
 
-	    var validationPromises = keys.map(function (key) {
-	        var validationProp = validationObj[validationInput][key];
-	        var resultObj = resolveNestedObject(targetObj, validationInput);
-	        var message = validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message;
-	        return Promise.resolve(validationProp.isValid(resultObj)).then(function (validationPropKey, isValid) {
-	            if (!isValid) {
-	                return {
-	                    key: validationPropKey,
-	                    message: message
-	                };
-	            }
-	        }.bind(null, key));
-	    });
+	    if (targetObj instanceof Array) {
+	        toReturn = Promise.all(targetObj.map(function (object) {
+	            return messagesAsync(object, validationObj, validationInput);
+	        }));
+	    } else {
+	        var validationPromises = keys.map(function (key) {
+	            var validationProp = validationObj[validationInput][key];
+	            var resultObj = resolveNestedObject(targetObj, validationInput);
+	            var message = validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message;
+	            return Promise.resolve(validationProp.isValid(resultObj)).then(function (validationPropKey, isValid) {
+	                if (!isValid) {
+	                    return {
+	                        key: validationPropKey,
+	                        message: message
+	                    };
+	                }
+	            }.bind(null, key));
+	        });
 
-	    return Promise.all(validationPromises).then(function (message) {
-	        return message.filter(isNotUndefined).reduce(reduceToObject, {});
-	    });
+	        toReturn = Promise.all(validationPromises).then(function (message) {
+	            return message.filter(isNotUndefined).reduce(reduceToObject, {});
+	        });
+	    }
+	    return toReturn;
 	}
 	// Returns an array of objects, one object for each validation
 	// input, with each key on that object being the failed validation
@@ -289,27 +321,35 @@ var flexiValidate =
 	    validateParams(targetObj, validationObj);
 
 	    var keys = Object.keys(validationObj);
+	    var toReturn = undefined;
 
-	    return keys.reduce(function (result, key) {
-	        var validationInputObj = validationObj[key];
-	        var validationInputKeys = Object.keys(validationInputObj);
-	        var validationResult = {};
-
-	        validationInputKeys.forEach(function (inputKey) {
-	            var validationProp = validationInputObj[inputKey];
-	            var resultObj = resolveNestedObject(targetObj, key);
-	            var message = validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message;
-	            if (!validationProp.isValid(resultObj)) {
-	                validationResult[inputKey] = message;
-	            }
+	    if (targetObj instanceof Array) {
+	        toReturn = targetObj.map(function (object) {
+	            return allMessages(object, validationObj);
 	        });
+	    } else {
+	        toReturn = keys.reduce(function (result, key) {
+	            var validationInputObj = validationObj[key];
+	            var validationInputKeys = Object.keys(validationInputObj);
+	            var validationResult = {};
 
-	        if (Object.keys(validationResult).length > 0) {
-	            result[key] = validationResult;
-	        }
+	            validationInputKeys.forEach(function (inputKey) {
+	                var validationProp = validationInputObj[inputKey];
+	                var resultObj = resolveNestedObject(targetObj, key);
+	                var message = validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message;
+	                if (!validationProp.isValid(resultObj)) {
+	                    validationResult[inputKey] = message;
+	                }
+	            });
 
-	        return result;
-	    }, {});
+	            if (Object.keys(validationResult).length > 0) {
+	                result[key] = validationResult;
+	            }
+
+	            return result;
+	        }, {});
+	    }
+	    return toReturn;
 	}
 	// Returns a promise resolving to an array of objects, one object for
 	// each validation input, with each key on that object being the failed
@@ -322,41 +362,49 @@ var flexiValidate =
 	    }
 
 	    var keys = Object.keys(validationObj);
+	    var toReturn = undefined;
 
-	    var validationPromises = keys.map(function (key) {
-	        var validationInputObj = validationObj[key];
-	        var validationInputKeys = Object.keys(validationInputObj);
-	        var validationInputPromises = validationInputKeys.map(function (inputKey) {
-	            var validationProp = validationInputObj[inputKey];
-	            var resultObj = resolveNestedObject(targetObj, key);
-	            var message = validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message;
-	            return Promise.resolve(validationProp.isValid(resultObj)).then(function (isValid) {
-	                if (!isValid) {
-	                    return {
-	                        message: message,
-	                        key: inputKey
-	                    };
-	                }
+	    if (targetObj instanceof Array) {
+	        toReturn = Promise.all(targetObj.map(function (object) {
+	            return allMessagesAsync(object, validationObj);
+	        }));
+	    } else {
+	        var validationPromises = keys.map(function (key) {
+	            var validationInputObj = validationObj[key];
+	            var validationInputKeys = Object.keys(validationInputObj);
+	            var validationInputPromises = validationInputKeys.map(function (inputKey) {
+	                var validationProp = validationInputObj[inputKey];
+	                var resultObj = resolveNestedObject(targetObj, key);
+	                var message = validationProp.message instanceof Function ? validationProp.message(resultObj) : validationProp.message;
+	                return Promise.resolve(validationProp.isValid(resultObj)).then(function (isValid) {
+	                    if (!isValid) {
+	                        return {
+	                            message: message,
+	                            key: inputKey
+	                        };
+	                    }
+	                });
+	            });
+
+	            return Promise.all(validationInputPromises).then(function (validationInputResults) {
+	                var resultObj = validationInputResults.reduce(function (result, current) {
+	                    result[current.key] = current.message;
+	                    return result;
+	                }, {});
+	                resultObj.inputKey = key;
+	                return resultObj;
 	            });
 	        });
 
-	        return Promise.all(validationInputPromises).then(function (validationInputResults) {
-	            var resultObj = validationInputResults.reduce(function (result, current) {
-	                result[current.key] = current.message;
+	        toReturn = Promise.all(validationPromises).then(function (allMessages) {
+	            return allMessages.reduce(function (result, current) {
+	                result[current.inputKey] = current;
+	                delete current.inputKey;
 	                return result;
 	            }, {});
-	            resultObj.inputKey = key;
-	            return resultObj;
 	        });
-	    });
-
-	    return Promise.all(validationPromises).then(function (allMessages) {
-	        return allMessages.reduce(function (result, current) {
-	            result[current.inputKey] = current;
-	            delete current.inputKey;
-	            return result;
-	        }, {});
-	    });
+	    }
+	    return toReturn;
 	}
 	// Returns an object that contains all the attributes of
 	// the target object that are being validated
@@ -364,17 +412,25 @@ var flexiValidate =
 	    validateParams(targetObj, validationObj);
 
 	    var keys = Object.keys(validationObj);
-	    var result = {};
-	    keys.forEach(function (key) {
-	        var isNestedKey = key.indexOf('.') > -1;
-	        if (!isNestedKey) {
-	            result[key] = targetObj[key];
-	        } else {
-	            var rootKey = key.split('.')[0];
-	            result[rootKey] = targetObj[rootKey];
-	        }
-	    });
-	    return result;
+	    var toReturn = undefined;
+
+	    if (targetObj instanceof Array) {
+	        toReturn = targetObj.map(function (object) {
+	            return cleanAttributes(object, validationObj);
+	        });
+	    } else {
+	        toReturn = {};
+	        keys.forEach(function (key) {
+	            var isNestedKey = key.indexOf('.') > -1;
+	            if (!isNestedKey) {
+	                toReturn[key] = targetObj[key];
+	            } else {
+	                var rootKey = key.split('.')[0];
+	                toReturn[rootKey] = targetObj[rootKey];
+	            }
+	        });
+	    }
+	    return toReturn;
 	}
 	// Default export object with all functions as properties
 	exports.default = {

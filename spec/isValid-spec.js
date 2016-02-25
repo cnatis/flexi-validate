@@ -51,6 +51,30 @@ describe('flexiValidate.isValid', function() {
         var isValid2 = validation.isValid(objectToTest2, constraints);
         expect(isValid2).toBe(true);
     });
+    it('should validate an array of objects based on constraints', function () {
+        var constraints = {
+            testProperty: {
+                isRequired: {
+                    isValid: function(prop) {
+                        return (typeof(prop) !== 'undefined');
+                    },
+                    message: 'testProperty is required'
+                }
+            }
+        };
+        var objectToTest = [{}];
+        var isValid = validation.isValid(objectToTest, constraints);
+        expect(isValid instanceof Array).toBe(true);
+        expect(isValid.length).toBe(1);
+        expect(isValid[0]).toBe(false);
+        var objectToTest2 = [{
+            testProperty: 'test'
+        }];
+        var isValid2 = validation.isValid(objectToTest2, constraints);
+        expect(isValid2 instanceof Array).toBe(true);
+        expect(isValid2.length).toBe(1);
+        expect(isValid2[0]).toBe(true);
+    });
     it('should allow validation props without constraints', function () {
         var constraints = {
             testProperty: {

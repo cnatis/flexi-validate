@@ -74,6 +74,36 @@ describe('flexiValidate.allMessages', function() {
             }
         });
     });
+    it('should validate an array of objects and produce a message for each failed constraint', function () {
+        var constraints = {
+            testProperty: {
+                isRequired: {
+                    isValid: function(prop) {
+                        return (typeof(prop) !== 'undefined');
+                    },
+                    message: 'testProperty is required'
+                },
+                isRequired2: {
+                    isValid: function(prop) {
+                        return (typeof(prop) !== 'undefined');
+                    },
+                    message: 'testProperty is required2'
+                }
+            }
+        };
+        var objectToTest = [{}];
+        var isValid = validation.isValid(objectToTest, constraints);
+        var allMessages = validation.allMessages(objectToTest, constraints);
+        expect(allMessages instanceof Array).toBe(true);
+        expect(isValid instanceof Array).toBe(true);
+        expect(isValid[0]).toBe(false);
+        expect(allMessages).toEqual([{
+            testProperty: {
+                isRequired: constraints.testProperty.isRequired.message,
+                isRequired2: constraints.testProperty.isRequired2.message
+            }
+        }]);
+    });
     it('should produce a message for each failed validation input', function () {
         var constraints = {
             testProperty: {

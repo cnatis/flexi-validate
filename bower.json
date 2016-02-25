@@ -6,7 +6,7 @@
     "build/flexiValidate.browser.js",
     "build/flexiValidate.browser.min.js"
   ],
-  "version": "1.0.4",
+  "version": "1.0.5",
   "homepage": "https://github.com/cnatis/flexi-validate",
   "authors": [
     "Christian Natis"

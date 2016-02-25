@@ -197,4 +197,42 @@ describe('flexiValidate', function() {
     	    username: 'test'
     	});
     });
+    
+    it('example #3 code example should work', function() {
+        var validationObj = {
+    		username: {
+    			required: {
+    				isValid: function(username) {
+    					return true;
+    				},
+    				message: 'Username is required'
+    			}
+    		},
+    		somethingElse: {}
+    	};
+    	
+    	var objectToValidate = {
+    	    username: 'test',
+    	    somethingElse: true
+    	};
+    	
+    	var arrayToValidate = [
+    	    objectToValidate,
+    	    objectToValidate
+    	];
+    	
+    	var cleanObjs = flexiValidate.cleanAttributes(arrayToValidate, validationObj); 
+    	// returns the following array of objects
+    	// somthingElse is filtered because we are not validating it
+    	expect(cleanObjs).toEqual([
+    	    {
+    	        username: 'test',
+    	        somethingElse: true
+    	    },
+    	    {
+    	        username: 'test',
+    	        somethingElse: true
+    	    }
+	    ]);
+    });
 });
