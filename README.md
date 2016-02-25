@@ -198,7 +198,7 @@ Second parameter is the validation object containing our validation structure
 
 ### allMessagesAsync
 
-Returns a promise resolving toan object where each key is a failed validation input object and each property on the object is a failed validation prop and the value of that property is the validation message or an array of promises resolving to the result of allMessagesAsync if the first parameter is an array
+Returns a promise resolving to an object where each key is a failed validation input object and each property on the object is a failed validation prop and the value of that property is the validation message or an array of promises resolving to the result of allMessagesAsync if the first parameter is an array
 First parameter is the target object or array of objects we want to validate
 Second parameter is the validation object containing our validation structure
 ```
