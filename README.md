@@ -1,4 +1,4 @@
-# Flexi Validate
+# Flexi Validate [![npm version](https://badge.fury.io/js/flexi-validate.svg)](https://badge.fury.io/js/flexi-validate)
 A flexible JavaScript object validator
 
 ## Module Formats
@@ -17,6 +17,12 @@ A flexible JavaScript object validator
 
 ## Dependencies
 * No external dependencies, Promise MUST be globably available, either shim or run in a run time that has Promise support
+
+## Build Instructions
+Building Flexi Validate is as easy as cloning our github repo and running `npm run build`, you will need to run `npm install` before trying to build the project.
+
+## Testing Instructions
+Testing Flexi Validate is as easy as cloning our github repo and running `npm test`, you will need to run `npm install` before trying to build the project. Also note that you will need to rebuild the project if you change the source files and wish to test them.
 
 ## Basic Usage
 Flexi Validate is meant to be a barebones tool to run validation assertions on JavaScript objects. Because it is meant to be as barebones as possible, Flexi Validate does not include any utilities for assertions. It will only run your assertions against the target object. Due to the fact that Flexi Validate is barebones, users can bend it to their will. You can use it for validating complex objects by using multiple validation objects and calling isValid inside the first isValid. This can be used to validate an object with an array of objects, the possibilities are nearly endless.
